@@ -1,0 +1,45 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
+require 'rubygems'
+require 'commander/import'
+require 'yaml'
+require 'json'
+
+require 'rack'
+require "pathname"
+require 'coffee-script'
+require 'haml'
+require 'sass'
+
+require_relative '../lib/builder'
+require_relative '../lib/app'
+require_relative '../lib/extensions'
+
+program :name, 'Shard CLI'
+program :version, '0.0.1'
+program :description, 'Shard CLI'
+
+global_option('-e', '--env STRING', 'Rnvirnoment') { |env| $env = env }
+
+$env = 'development' unless $env
+
+command :nw do |c|
+  c.syntax = ''
+  c.description = ''
+  c.action do |args,options|
+    app = App.new
+    app.load_config
+    app.build_node_webkit
+  end
+end
+
+command :build do |c|
+  c.syntax = ''
+  c.description = ''
+  c.action do |args,options|
+    app = App.new
+    app.load_config
+    app.build app.build_dir
+  end
+end
