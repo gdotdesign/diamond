@@ -51,8 +51,9 @@ class App
 
   #---------
   def compile_coffee
+    x ="window.ENV = '#{$env}'"
     builder = Builder.new
-    builder.build([source_dir+"/index.coffee"])
+    builder.build([source_dir+"/index.coffee"],x)
   end
 
   def compile_haml

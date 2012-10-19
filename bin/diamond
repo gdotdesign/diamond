@@ -28,7 +28,6 @@ global_option('-e', '--env STRING', 'Rnvirnoment') { |env| $env = env }
 
 $env = 'development' unless $env
 
-
 $app = App.new
 $app.load_config
 
