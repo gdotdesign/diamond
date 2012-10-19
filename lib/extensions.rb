@@ -17,8 +17,13 @@ class Scope
   def initialize(base)
     @base = base
   end
-  def haml(view,locals = {locals: {}})
-    # TODO relative path
-    Haml::Engine.new(File.read(@base+"/"+view+".haml")).render(Scope.new(@base), locals[:locals])
+  def haml(view,locals = {locals: {}}, &block)
+    Haml::Engine.new(File.read(@base+"/"+view+".haml")).render Scope.new(@base), locals[:locals] do
+      if defined? block
+        capture_haml &block
+      else
+        ""
+      end
+    end
   end
 end

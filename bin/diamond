@@ -11,10 +11,14 @@ require "pathname"
 require 'coffee-script'
 require 'haml'
 require 'sass'
+require 'rack'
+require 'renee'
+require 'thin'
 
 require_relative '../lib/builder'
 require_relative '../lib/app'
 require_relative '../lib/extensions'
+require_relative '../lib/server'
 
 program :name, 'Shard CLI'
 program :version, '0.0.1'
@@ -24,13 +28,26 @@ global_option('-e', '--env STRING', 'Rnvirnoment') { |env| $env = env }
 
 $env = 'development' unless $env
 
+
+$app = App.new
+$app.load_config
+
 command :nw do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    app = App.new
-    app.load_config
-    app.build_node_webkit
+    $app.build_node_webkit
+  end
+end
+
+command :server do |c|
+  c.action do |args,options|
+    statics = Dir.glob($app.assets_dir+"/*/").map {|dir| "/"+File.basename(dir)}
+    builder = Rack::Builder.new {
+      use Rack::Static, :urls => statics, :root => $app.assets_dir
+      run Server
+    }
+    Rack::Handler::Thin.run builder, :Port => 9292
   end
 end
 
@@ -38,8 +55,6 @@ command :build do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    app = App.new
-    app.load_config
-    app.build app.build_dir
+    $app.build app.build_dir
   end
 end

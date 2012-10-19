@@ -52,7 +52,7 @@ class App
   #---------
   def compile_coffee
     builder = Builder.new
-    builder.build(Dir.glob(source_dir+"/**/*.coffee"))
+    builder.build([source_dir+"/index.coffee"])
   end
 
   def compile_haml
@@ -63,7 +63,7 @@ class App
   end
 
   def compile_sass
-    cssengine = Sass::Engine.new(File.read(styles_dir+'/style.sass'),:load_paths => [styles_dir])
+    cssengine = Sass::Engine.new(File.read(styles_dir+'/style.sass'),:load_paths => [styles_dir],:cache => false)
     cssengine.render()
   end
   #---------

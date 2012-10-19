@@ -21,15 +21,26 @@ class Builder
   end
 
   def add(path)
-    realpath = Pathname.new(path).realpath
-    basePath = Pathname.new(File.dirname(realpath))
-    contents = File.read(path)
-    m = contents.scan /@requires\s(.*)[\n|\r\$]/
-    m.each do |dependency|
-      p = basePath+(dependency[0]+".coffee")
-      add p unless @files.include? p
+    if File.file?(path)
+      #exact path
+      realpath = Pathname.new(path).realpath
+      basePath = Pathname.new(File.dirname(realpath))
+      contents = File.read(path)
+      m = contents.scan /@requires\s(.*)[\n|\r\$]/
+      m.each do |dependency|
+        p = basePath+dependency[0]
+        add p unless @files.include? p
+      end
+      @files.push realpath unless @files.include? realpath
+    elsif File.directory?(path)
+      #directory
+      Dir.glob(path.to_s+"/*.coffee").each do |f|
+        add f unless @files.include? f
+      end
+    elsif File.file?(path.to_s+".coffee")
+      path.to_s+".coffee"
+      #without extension
     end
-    @files.push realpath unless @files.include? realpath
   end
 
   def assemble
