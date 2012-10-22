@@ -3,14 +3,14 @@ class Server < Renee::Application
    views_path "./views"
   end
   app do
-    path '/specs.js' do
+    path "/specs.js" do
       respond! do
         headers({
           :"Cache-Control" => "must-revalidate",
           :Expires =>(Time.now - 2000).utc.rfc2822,
           :"Content-Type" => "text/javascript"
         })
-        body `rake specsjs`
+        body $app.compile_specs
       end
     end
     part "**" do
@@ -94,16 +94,6 @@ class Server < Renee::Application
           :"Content-Type" => "text/javascript"
         })
         body $app.compile_coffee
-      end
-    end
-    path "/specs.js" do
-      respond! do
-        headers({
-          :"Cache-Control" => "must-revalidate",
-          :Expires =>(Time.now - 2000).utc.rfc2822,
-          :"Content-Type" => "text/javascript"
-        })
-        body $app.compile_specs
       end
     end
     respond! do

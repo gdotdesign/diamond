@@ -16,17 +16,18 @@ require 'renee'
 require 'thin'
 require 'rake'
 require 'hpricot'
+require 'zip/zip'
 
 require_relative '../lib/builder'
 require_relative '../lib/app'
 require_relative '../lib/extensions'
 require_relative '../lib/server'
 
-program :name, 'Shard CLI'
+program :name, 'Diamond'
 program :version, '0.0.1'
-program :description, 'Shard CLI'
+program :description, ' Development Enviroment for Chrome / Node-Webkit apps'
 
-global_option('-e', '--env STRING', 'Rnvirnoment') { |env| $env = env }
+global_option('-e', '--env STRING', 'envirnoment') { |env| $env = env }
 
 bin_file = Pathname.new(__FILE__).realpath
 $:.unshift File.expand_path("../../lib", bin_file)
@@ -41,7 +42,7 @@ command :nw do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    $app.build_node_webkit
+    $app.run_node_webkit
   end
 end
 
@@ -83,5 +84,58 @@ command :build do |c|
   c.description = ''
   c.action do |args,options|
     $app.build app.build_dir
+  end
+end
+
+command :cleanup do |c|
+  c.action do |args,options|
+    `rm -rf app.nw .nw_build .build packages/linux32 packages/linux64 packages/win32 packages/mac32`
+  end
+end
+
+command :package do |c|
+  c.action do |args,options|
+
+    `rm -rf packages`
+    `mkdir packages`
+    puts "Packaging for Chrome Web Store"
+    $app.build_chrome
+    `cd .build && zip -r ../packages/chrome_web_store.zip *`
+
+
+    puts "Packaging for Platforms:"
+
+    $app.build_node_webkit
+
+    Zip::ZipFile.open('app.nw',Zip::ZipFile::CREATE) do |zip|
+      Dir.glob(".nw_build/**/*") do |file|
+        zip.add file.gsub('.nw_build/',''), file
+      end
+    end
+
+    `cp -r #{$app.config[:node_webkit_directory]}/* packages/`
+    puts "  > Linux 32bit"
+    `cat packages/linux32/nw app.nw > packages/linux32/#{$app.config[:app][:title].downcase} && chmod +x packages/linux32/#{$app.config[:app][:title].downcase}`
+    `rm -f packages/linux32/nw`
+    puts "  > Linux 64bit"
+    `cat packages/linux64/nw app.nw > packages/linux64/#{$app.config[:app][:title].downcase} && chmod +x packages/linux64/#{$app.config[:app][:title].downcase}`
+    `rm -f packages/linux64/nw`
+    puts "  > Windows 32bit"
+    `cat packages/win32/nw.exe app.nw > packages/win32/#{$app.config[:app][:title].downcase}.exe`
+    `rm -f packages/win32/nw.exe`
+    puts "  > Mac 32bit"
+    `cp app.nw packages/mac32/node-webkit.app/Contents/Resources/app.nw`
+
+    puts "Zipping packages:"
+    puts "  > Linux 32bit"
+    `cd packages/linux32 && zip -r ../#{$app.config[:app][:title].downcase}-linux32.zip *`
+    puts "  > Linux 64bit"
+    `cd packages/linux64 && zip -r ../#{$app.config[:app][:title].downcase}-linux64.zip *`
+    puts "  > Windows 32bit"
+    `cd packages/win32 && zip -r ../#{$app.config[:app][:title].downcase}-win32.zip *`
+    puts "  > Mac 32bit"
+    `cd packages/mac32/ && mv node-webkit.app #{$app.config[:app][:title].downcase}.app && zip -r ../#{$app.config[:app][:title].downcase}-mac32.zip *`
+    puts "Cleaning up"
+    `rm -rf app.nw .nw_build .build packages/linux32 packages/linux64 packages/win32 packages/mac32`
   end
 end

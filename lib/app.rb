@@ -1,4 +1,5 @@
 class App
+  attr_reader :config
   def load_config
     @config = YAML::load_file(Dir.pwd+"/diamond.yml").symbolize_keys!
   end
@@ -32,6 +33,7 @@ class App
   end
 
   def nw_manifest
+    @config[:node_webkit][:window][:icon] = @config[:app][:icons][:"128"]
     @config[:node_webkit].to_json
   end
 
@@ -80,15 +82,25 @@ class App
   end
   #---------
 
-  def build_node_webkit
-    build nw_dir
-    File.open(nw_dir+'/package.json', 'w+') do |f|
-      f.write nw_manifest
-    end
+  def run_node_webkit
+    build_node_webkit
     command = "nw #{nw_dir}"
     command += " --developer" unless $env == 'production'
     `#{command}`
     FileUtils.rm_r nw_dir
   end
 
+  def build_node_webkit
+    build nw_dir
+    File.open(nw_dir+'/package.json', 'w+') do |f|
+      f.write nw_manifest
+    end
+  end
+
+  def build_chrome
+    build build_dir
+    File.open(build_dir+'/manifest.json', 'w+') do |f|
+      f.write chrome_manifest
+    end
+  end
 end
