@@ -67,6 +67,17 @@ class App
     cssengine = Sass::Engine.new(File.read(styles_dir+'/style.sass'),:load_paths => [styles_dir],:cache => false)
     cssengine.render()
   end
+
+  def compile_specs
+    code = ''
+    FileList[specs_dir+"/support/*.coffee"].each do |f|
+      code +=  File.read(f)+"\n"
+    end
+    FileList[specs_dir+"/**/*.coffee"].exclude(specs_dir+'/support/*.coffee').each do |f|
+      code +=  File.read(f)+"\n"
+    end
+    CoffeeScript.compile code, bare: true
+  end
   #---------
 
   def build_node_webkit
