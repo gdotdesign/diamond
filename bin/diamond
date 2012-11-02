@@ -42,18 +42,24 @@ command :nw do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    $app.run_node_webkit
+    puts "Running nw"
+    silence_stream(STDOUT) do
+      $app.run_node_webkit
+    end
   end
 end
 
 command :server do |c|
   c.action do |args,options|
     statics = Dir.glob($app.assets_dir+"/*/").map {|dir| "/"+File.basename(dir)}
-    builder = Rack::Builder.new {
-      use Rack::Static, :urls => statics, :root => $app.assets_dir
-      run Server
-    }
-    Rack::Handler::Thin.run builder, :Port => 9292
+    puts "Server started..."
+    #silence_stream(STDOUT) do
+      builder = Rack::Builder.new {
+        use Rack::Static, :urls => statics, :root => $app.assets_dir
+        run Server
+      }
+      Rack::Handler::Thin.run builder, :Port => 9292
+    #end
   end
 end
 
@@ -94,14 +100,20 @@ command :cleanup do |c|
 end
 
 command :package do |c|
+  c.option '--platform STRING', String, 'win32 / linux32 / linux64 / mac32 / all'
+  c.option '--[no-]zip','Zip packages'
+  c.option '--[no-]webstore','Webstore'
   c.action do |args,options|
+    options.default :platform => 'all', :zip => true, :webstore => true
 
+    $env = 'production'
     `rm -rf packages`
     `mkdir packages`
-    puts "Packaging for Chrome Web Store"
-    $app.build_chrome
-    `cd .build && zip -r ../packages/chrome_web_store.zip *`
-
+    if options.webstore
+      puts "Packaging for Chrome Web Store"
+      $app.build_chrome
+      `cd .build && zip -r ../packages/#{$app.config[:app][:name].downcase}-cws.zip *`
+    end
 
     puts "Packaging for Platforms:"
 
@@ -113,29 +125,45 @@ command :package do |c|
       end
     end
 
-    `cp -r #{$app.config[:node_webkit_directory]}/* packages/`
-    puts "  > Linux 32bit"
-    `cat packages/linux32/nw app.nw > packages/linux32/#{$app.config[:app][:title].downcase} && chmod +x packages/linux32/#{$app.config[:app][:title].downcase}`
-    `rm -f packages/linux32/nw`
-    puts "  > Linux 64bit"
-    `cat packages/linux64/nw app.nw > packages/linux64/#{$app.config[:app][:title].downcase} && chmod +x packages/linux64/#{$app.config[:app][:title].downcase}`
-    `rm -f packages/linux64/nw`
-    puts "  > Windows 32bit"
-    `cat packages/win32/nw.exe app.nw > packages/win32/#{$app.config[:app][:title].downcase}.exe`
-    `rm -f packages/win32/nw.exe`
-    puts "  > Mac 32bit"
-    `cp app.nw packages/mac32/node-webkit.app/Contents/Resources/app.nw`
+    case options.platform
+      when "linux32"
+        puts "  > Linux 32bit"
+        $app.linux32
+      when "linux64"
+        puts "  > Linux 64bit"
+        $app.linux64
+      when "win32"
+        puts "  > Windows 32bit"
+        $app.win32
+      when "mac32"
+        puts "  > Mac 32bit"
+        $app.mac32
+      when "all"
+        puts "  > Linux 32bit"
+        $app.linux32
+        puts "  > Linux 64bit"
+        $app.linux64
+        puts "  > Windows 32bit"
+        $app.win32
+        puts "  > Mac 32bit"
+        $app.mac32
+    end
 
-    puts "Zipping packages:"
-    puts "  > Linux 32bit"
-    `cd packages/linux32 && zip -r ../#{$app.config[:app][:title].downcase}-linux32.zip *`
-    puts "  > Linux 64bit"
-    `cd packages/linux64 && zip -r ../#{$app.config[:app][:title].downcase}-linux64.zip *`
-    puts "  > Windows 32bit"
-    `cd packages/win32 && zip -r ../#{$app.config[:app][:title].downcase}-win32.zip *`
-    puts "  > Mac 32bit"
-    `cd packages/mac32/ && mv node-webkit.app #{$app.config[:app][:title].downcase}.app && zip -r ../#{$app.config[:app][:title].downcase}-mac32.zip *`
+    if options.zip
+      puts "Zipping packages:"
+      puts "  > Linux 32bit"
+      `cd packages/linux32 && zip -r ../#{$app.config[:app][:name].downcase}-linux32.zip *`
+      puts "  > Linux 64bit"
+      `cd packages/linux64 && zip -r ../#{$app.config[:app][:name].downcase}-linux64.zip *`
+      puts "  > Windows 32bit"
+      `cd packages/win32 && zip -r ../#{$app.config[:app][:name].downcase}-win32.zip *`
+      puts "  > Mac 32bit"
+      `cd packages/mac32/ && mv node-webkit.app #{$app.config[:app][:name].downcase}.app && zip -r ../#{$app.config[:app][:name].downcase}-mac32.zip *`
+    end
     puts "Cleaning up"
-    `rm -rf app.nw .nw_build .build packages/linux32 packages/linux64 packages/win32 packages/mac32`
+    `rm -rf app.nw .nw_build .build`
+    if options.zip
+      `rm -rf packages/linux32 packages/linux64 packages/win32 packages/mac32`
+    end
   end
 end

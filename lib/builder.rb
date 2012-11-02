@@ -8,7 +8,7 @@ class Builder
 
   def build(files = [], content = "", ugly = false)
     files.each do |f|
-       add f unless f =~ @excludePatter
+      add f unless f =~ @excludePatter
     end
     @content = content
     assemble
@@ -21,6 +21,7 @@ class Builder
   end
 
   def add(path)
+    return if path.to_s =~ @excludePatter
     if File.file?(path)
       #exact path
       realpath = Pathname.new(path).realpath

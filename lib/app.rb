@@ -33,11 +33,11 @@ class App
   end
 
   def nw_manifest
-    @config[:node_webkit][:window][:icon] = @config[:app][:icons][:"128"]
+    @config[:node_webkit][:window][:icon] = @config[:app][:icons][:"256"]
     @config[:node_webkit].to_json
   end
 
-  def build(dir)
+  def build(dir,exclude = /^$/)
     FileUtils.mkdir dir unless Dir.exists? dir
     File.open(dir+'/style.css', 'w+') do |f|
       f.write compile_sass
@@ -46,15 +46,15 @@ class App
       f.write compile_haml
     end
     File.open(dir+'/index.js', 'w+') do |f|
-      f.write compile_coffee
+      f.write compile_coffee exclude
     end
     FileUtils.cp_r Dir.glob(assets_dir+"/*/"), dir
   end
 
   #---------
-  def compile_coffee
-    x ="window.ENV = '#{$env}'"
-    builder = Builder.new
+  def compile_coffee(exclude=/^$/)
+    x ="window.ENV = '#{$env}'\nwindow.VERSION='#{@config[:app][:version]}'\n"
+    builder = Builder.new exclude
     builder.build([source_dir+"/index.coffee"],x)
   end
 
@@ -98,9 +98,34 @@ class App
   end
 
   def build_chrome
-    build build_dir
+    build build_dir, /\.nw\./
     File.open(build_dir+'/manifest.json', 'w+') do |f|
       f.write chrome_manifest
     end
+  end
+  
+
+  #---------
+  def linux32
+    FileUtils.cp_r "#{$app.config[:node_webkit_directory]}/linux32", "packages"
+    `cat packages/linux32/nw app.nw > packages/linux32/#{$app.config[:app][:name].downcase} && chmod +x packages/linux32/#{$app.config[:app][:name].downcase}`
+    FileUtils.rm_r "packages/linux32/nw"
+  end
+
+  def linux64
+    FileUtils.cp_r "#{$app.config[:node_webkit_directory]}/linux64", "packages"
+    `cat packages/linux64/nw app.nw > packages/linux64/#{$app.config[:app][:name].downcase} && chmod +x packages/linux64/#{$app.config[:app][:name].downcase}`
+    FileUtils.rm_r "packages/linux64/nw"
+  end
+
+  def win32
+    FileUtils.cp_r "#{$app.config[:node_webkit_directory]}/win32", "packages"
+    `cat packages/win32/nw.exe app.nw > packages/win32/#{$app.config[:app][:name].downcase}.exe`
+    FileUtils.rm_r "packages/win32/nw.exe"
+  end
+
+  def mac32
+    FileUtils.cp_r "#{$app.config[:node_webkit_directory]}/mac32", "packages"
+    `cp app.nw packages/mac32/node-webkit.app/Contents/Resources/app.nw`
   end
 end

@@ -93,7 +93,7 @@ class Server < Renee::Application
           :Expires =>(Time.now - 2000).utc.rfc2822,
           :"Content-Type" => "text/javascript"
         })
-        body $app.compile_coffee
+        body $app.compile_coffee /\.nw\./
       end
     end
     respond! do
