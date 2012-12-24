@@ -3,6 +3,16 @@ class Server < Renee::Application
    views_path "./views"
   end
   app do
+    path "/features" do
+      respond! do
+        headers({
+          :"Cache-Control" => "must-revalidate",
+          :Expires =>(Time.now - 2000).utc.rfc2822,
+          :"Content-Type" => "text/pain"
+        })
+        body $app.compile_features
+      end
+    end
     path "/specs.js" do
       respond! do
         headers({
@@ -20,6 +30,17 @@ class Server < Renee::Application
         end
       end
     end
+    path "/cucumber" do
+      html = $app.compile_haml
+      html += "<script src='/**/cucumber.js' type='text/javascript'></script>"
+      html += "<script src='/specs.js' type='text/javascript'></script>"
+      respond! do
+        headers({
+          :"Content-Type" => "text/html"
+        })
+        body html
+      end
+    end
     path '/specs' do
       html = """
         <script>
@@ -29,9 +50,9 @@ class Server < Renee::Application
               // closest thing possible to the ECMAScript 5 internal IsCallable function
               throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
             }
-         
-            var aArgs = Array.prototype.slice.call(arguments, 1), 
-                fToBind = this, 
+
+            var aArgs = Array.prototype.slice.call(arguments, 1),
+                fToBind = this,
                 fNOP = function () {},
                 fBound = function () {
                   return fToBind.apply(this instanceof fNOP && oThis
@@ -39,10 +60,10 @@ class Server < Renee::Application
                                          : oThis,
                                        aArgs.concat(Array.prototype.slice.call(arguments)));
                 };
-         
+
             fNOP.prototype = this.prototype;
             fBound.prototype = new fNOP();
-         
+
             return fBound;
           };
         }

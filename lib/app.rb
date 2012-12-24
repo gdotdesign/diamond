@@ -20,6 +20,9 @@ class App
   def specs_dir
     Dir.pwd+"/"+@config[:directories][:specs]
   end
+  def features_dir
+    Dir.pwd+'/features'
+  end
   def build_dir
     Dir.pwd+'/.build'
   end
@@ -56,6 +59,14 @@ class App
     x ="window.ENV = '#{$env}'\nwindow.VERSION='#{@config[:app][:version]}'\n"
     builder = Builder.new exclude
     builder.build([source_dir+"/index.coffee"],x)
+  end
+
+  def compile_features
+    r = ""
+    Dir.glob(features_dir+"/**/*.feature").each do |file|
+      r += File.read file
+    end
+    r
   end
 
   def compile_haml
@@ -103,7 +114,7 @@ class App
       f.write chrome_manifest
     end
   end
-  
+
 
   #---------
   def linux32

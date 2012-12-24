@@ -63,6 +63,17 @@ command :server do |c|
   end
 end
 
+command :cucumber do |c|
+  c.action do |args,options|
+    $env = "CUCUMBER"
+    statics = Dir.glob($app.assets_dir+"/*/").map {|dir| "/"+File.basename(dir)}
+    builder = Rack::Builder.new {
+      use Rack::Static, :urls => statics, :root => $app.assets_dir
+      run Server
+    }
+    Rack::Handler::Thin.run builder, :Port => 5000
+  end
+end
 command :specs do |c|
   $app.compile_specs
   c.action do |args,options|
@@ -89,7 +100,7 @@ command :build do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    $app.build app.build_dir
+    $app.build $app.build_dir
   end
 end
 
