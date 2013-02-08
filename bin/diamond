@@ -100,7 +100,7 @@ command :build do |c|
   c.syntax = ''
   c.description = ''
   c.action do |args,options|
-    $app.build $app.build_dir
+    $app.build $app.presistent_build_dir
   end
 end
 
@@ -119,6 +119,7 @@ command :package do |c|
 
     $env = 'production'
     `rm -rf packages`
+    `rm -rf app.nw`
     `mkdir packages`
     if options.webstore
       puts "Packaging for Chrome Web Store"

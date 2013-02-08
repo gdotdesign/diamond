@@ -26,6 +26,9 @@ class App
   def build_dir
     Dir.pwd+'/.build'
   end
+  def presistent_build_dir
+    Dir.pwd+'/build'
+  end
   def nw_dir
     Dir.pwd+'/.nw_build'
   end
