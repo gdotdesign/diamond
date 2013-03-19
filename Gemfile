@@ -1,0 +1,13 @@
+source 'http://rubygems.org'
+
+gem 'rack'
+gem 'coffee-script'
+gem 'haml'
+gem 'sass'
+gem 'rack'
+gem 'renee'
+gem 'thin'
+gem 'rake'
+gem 'hpricot'
+gem 'zip'
+gem 'commander'
